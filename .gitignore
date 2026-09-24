@@ -1,0 +1,50 @@
+# --- C/C++ kompilerede filer ---
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# --- Crash logs og debug filer ---
+core
+vgcore.*
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# --- Dine specifikke opgave-programmer ---
+random_ids
+id_query_naive
+id_query_indexed
+id_query_binsort
+coord_query_naive
+coord_query_kdtree
+
+# --- Projektdata og arkiver ---
+*.tsv
+*.tsv.gz
+*.zip
+*.tar.gz
+
+# --- OS-specifikke filer ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- IDE og Editor filer ---
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
