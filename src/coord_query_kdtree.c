@@ -67,6 +67,77 @@ struct node *build_tree(const struct record **points, int n, int depth) {
     return node;
 }
 
-int main(void) {
-    return 0;
+// Wrapper to match mk_index_fn signature
+void* mk_kdtree(const struct record* rs, int n) {
+    const struct record **points = malloc(n * sizeof(const struct record *));
+    for (int i = 0; i < n; i++) {
+        points[i] = &rs[i];
+    }
+    struct node *root = build_tree(points, n, 0);
+    free(points); 
+    return root;
+}
+
+double get_distance(const struct record *r, double lon, double lat) {
+    double dx = r->lon - lon;
+    double dy = r->lat - lat;
+    return sqrt(dx * dx + dy * dy);
+}
+
+
+void kdtree_lookup_recursive(const struct record **closest, double q_lon, double q_lat, struct node *node) {
+    if (node == NULL) return;
+
+    double current_best_dist = *closest ? get_distance(*closest, q_lon, q_lat) : INFINITY;
+    double node_dist = get_distance(node->point, q_lon, q_lat);
+
+    if (node_dist < current_best_dist) {
+        *closest = node->point;
+        current_best_dist = node_dist;
+    }
+
+    double diff = (node->axis == 0) ? (node->point->lon - q_lon) : (node->point->lat - q_lat);
+
+    // search the side where the query point lies .
+    if (diff >= 0) {
+        kdtree_lookup_recursive(closest, q_lon, q_lat, node->left);
+        
+        current_best_dist = *closest ? get_distance(*closest, q_lon, q_lat) : current_best_dist;
+        
+        // only search right if the radius crosses the splitting plane
+        if (current_best_dist > diff) {
+            kdtree_lookup_recursive(closest, q_lon, q_lat, node->right);
+        }
+    } else {
+        // Query is to the right
+        kdtree_lookup_recursive(closest, q_lon, q_lat, node->right);
+        
+        current_best_dist = *closest ? get_distance(*closest, q_lon, q_lat) : current_best_dist;
+        
+        if (current_best_dist > -diff) { 
+            kdtree_lookup_recursive(closest, q_lon, q_lat, node->left);
+        }
+    }
+}
+
+
+const struct record* lookup_kdtree(void *index, double lon, double lat) {
+    const struct record *closest = NULL;
+    kdtree_lookup_recursive(&closest, lon, lat, (struct node*)index);
+    return closest;
+}
+
+void free_tree(void *index) {
+    struct node *node = (struct node*)index;
+    if (node == NULL) return;
+    free_tree(node->left);
+    free_tree(node->right);
+    free(node);
+}
+
+int main(int argc, char** argv) {
+    return coord_query_loop(argc, argv,
+                            (mk_index_fn)mk_kdtree,
+                            (free_index_fn)free_tree,
+                            (lookup_fn)lookup_kdtree);
 }
